@@ -12,3 +12,4 @@ dotnet ef migrations add criar-banco
 Executar migração e alterar o banco de dados
 dotnet ef database update
 
+5153

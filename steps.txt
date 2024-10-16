@@ -13,3 +13,10 @@ Executar migração e alterar o banco de dados
 dotnet ef database update
 
 5153
+
+Pacotes a instalar
+    Microsoft.VisualStudio.Web.CodeGeneration.Design
+    Microsoft.EntityFrameworkCore.SqlServer
+
+Gerar Controller e Views de CRUD:
+    dotnet-aspnet-codegenerator controller -name CategoriaController -m Categoria -dc AppDbContext -l "~/Views/Shared/_LayoutAdmin.cshtml" -outDir Controllers

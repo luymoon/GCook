@@ -10,24 +10,26 @@ using GCook.Models;
 
 namespace GCook.Controllers
 {
-    public class CategoriaController : Controller
+    public class ReceitasController : Controller
     {
         private readonly AppDbContext _context;
+
         private readonly IWebHostEnvironment _host;
 
-        public CategoriaController(AppDbContext context, IWebHostEnvironment host)
+        public ReceitasController(AppDbContext context, IWebHostEnvironment host)
         {
             _context = context;
             _host = host;
         }
 
-        // GET: Categoria
+        // GET: Receitas
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Categorias.ToListAsync());
+            var appDbContext = _context.Receitas.Include(r => r.Categoria);
+            return View(await appDbContext.ToListAsync());
         }
 
-        // GET: Categoria/Details/5
+        // GET: Receitas/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -35,53 +37,55 @@ namespace GCook.Controllers
                 return NotFound();
             }
 
-            var categoria = await _context.Categorias
+            var receita = await _context.Receitas
+                .Include(r => r.Categoria)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (categoria == null)
+            if (receita == null)
             {
                 return NotFound();
             }
 
-            return View(categoria);
+            return View(receita);
         }
 
-        // GET: Categoria/Create
+        // GET: Receitas/Create
         public IActionResult Create()
         {
+            ViewData["CategoriaId"] = new SelectList(_context.Categorias, "Id", "Nome");
             return View();
         }
 
-        // POST: Categoria/Create
+        // POST: Receitas/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nome,Foto,ExibirHome")] Categoria categoria, IFormFile Foto)
+        public async Task<IActionResult> Create([Bind("Id,Nome,Descricao,TempoPreparo,Rendimento,Dificuldade,Foto,Preparo,CategoriaId")] Receita receita, IFormFile Foto)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(categoria);
+                _context.Add(receita);
                 await _context.SaveChangesAsync();
 
                 if (Foto != null) 
                 {
-                    string arquivo = categoria.Id + Path.GetExtension(Foto.FileName);
-                    string caminho = Path.Combine(_host.WebRootPath, "img/categorias");
+                    string arquivo = receita.Id + Path.GetExtension(Foto.FileName);
+                    string caminho = Path.Combine(_host.WebRootPath, "img/receitas");
                     string novoArquivo = Path.Combine(caminho, arquivo);
                     using (FileStream stream = new(novoArquivo, FileMode.Create))
                     {
                         Foto.CopyTo(stream);
                     }
-                    categoria.Foto = "img/categorias/" + arquivo;
+                    receita.Foto = "img/receitas/" + arquivo;
                     await _context.SaveChangesAsync();
-                }
 
                 return RedirectToAction(nameof(Index));
             }
-            return View(categoria);
+            ViewData["CategoriaId"] = new SelectList(_context.Categorias, "Id", "Nome", receita.CategoriaId);
+            return View(receita);
         }
 
-        // GET: Categoria/Edit/5
+        // GET: Receitas/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -89,22 +93,23 @@ namespace GCook.Controllers
                 return NotFound();
             }
 
-            var categoria = await _context.Categorias.FindAsync(id);
-            if (categoria == null)
+            var receita = await _context.Receitas.FindAsync(id);
+            if (receita == null)
             {
                 return NotFound();
             }
-            return View(categoria);
+            ViewData["CategoriaId"] = new SelectList(_context.Categorias, "Id", "Nome", receita.CategoriaId);
+            return View(receita);
         }
 
-        // POST: Categoria/Edit/5
+        // POST: Receitas/Edit/5
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Nome,Foto,ExibirHome")] Categoria categoria)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Nome,Descricao,TempoPreparo,Rendimento,Dificuldade,Foto,Preparo,CategoriaId")] Receita receita)
         {
-            if (id != categoria.Id)
+            if (id != receita.Id)
             {
                 return NotFound();
             }
@@ -113,12 +118,12 @@ namespace GCook.Controllers
             {
                 try
                 {
-                    _context.Update(categoria);
+                    _context.Update(receita);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!CategoriaExists(categoria.Id))
+                    if (!ReceitaExists(receita.Id))
                     {
                         return NotFound();
                     }
@@ -129,10 +134,11 @@ namespace GCook.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(categoria);
+            ViewData["CategoriaId"] = new SelectList(_context.Categorias, "Id", "Nome", receita.CategoriaId);
+            return View(receita);
         }
 
-        // GET: Categoria/Delete/5
+        // GET: Receitas/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -140,34 +146,35 @@ namespace GCook.Controllers
                 return NotFound();
             }
 
-            var categoria = await _context.Categorias
+            var receita = await _context.Receitas
+                .Include(r => r.Categoria)
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (categoria == null)
+            if (receita == null)
             {
                 return NotFound();
             }
 
-            return View(categoria);
+            return View(receita);
         }
 
-        // POST: Categoria/Delete/5
+        // POST: Receitas/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var categoria = await _context.Categorias.FindAsync(id);
-            if (categoria != null)
+            var receita = await _context.Receitas.FindAsync(id);
+            if (receita != null)
             {
-                _context.Categorias.Remove(categoria);
+                _context.Receitas.Remove(receita);
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CategoriaExists(int id)
+        private bool ReceitaExists(int id)
         {
-            return _context.Categorias.Any(e => e.Id == id);
+            return _context.Receitas.Any(e => e.Id == id);
         }
     }
 }
